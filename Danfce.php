@@ -16,11 +16,10 @@ namespace sleifer\danfepdf;
 use Exception;
 use InvalidArgumentException;
 use NFePHP\DA\Legacy\Dom;
-use NFePHP\DA\Legacy\Pdf;
+use sleifer\danfepdf\Pdf;
 use NFePHP\DA\Legacy\Common;
 use Com\Tecnick\Barcode\Barcode;
 use DateTime;
-use yii\helpers\VarDumper;
 
 class Danfce extends Common
 {
@@ -229,6 +228,7 @@ class Danfce extends Common
         //$this->situacao_externa = $situacaoExterna;
         $this->numero_registro_dpec = $depecNumReg;
         $this->pdf = new Pdf($this->orientacao, 'mm', $this->papel);
+        $this->pdf->AutoPrint();
         
         //margens do PDF, em milímetros. Obs.: a margem direita é sempre igual à
         //margem esquerda. A margem inferior *não* existe na FPDF, é definida aqui

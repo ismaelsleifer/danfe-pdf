@@ -2,9 +2,9 @@
 
 namespace sleifer\danfepdf;
 
-use NFePHP\DA\Legacy\FPDF\FPDF;
+use NFePHP\DA\Legacy\Pdf as LegacyPdf;
 
-class Pdf extends FPDF{
+class Pdf extends LegacyPdf{
     protected $javascript;
     protected $n_js;
 
