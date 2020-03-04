@@ -1,6 +1,6 @@
 <?php
 
-namespace sleifer\danfenfe\spidda;
+namespace sleifer\danfepdf;
 
 /**
  * Classe para a impressão em PDF do Documento Auxiliar de NFe Consumidor
@@ -20,6 +20,7 @@ use NFePHP\DA\Legacy\Pdf;
 use NFePHP\DA\Legacy\Common;
 use Com\Tecnick\Barcode\Barcode;
 use DateTime;
+use yii\helpers\VarDumper;
 
 class Danfce extends Common
 {
@@ -31,7 +32,7 @@ class Danfce extends Common
     protected $formatoChave="#### #### #### #### #### #### #### #### #### #### ####";
     protected $debugMode=0; //ativa ou desativa o modo de debug
     protected $tpImp; //ambiente
-    protected $fontePadrao='Times';
+    protected $fontePadrao='arial';
     protected $nfeProc;
     protected $nfe;
     protected $infNFe;
@@ -57,6 +58,8 @@ class Danfce extends Common
     protected $hMaxLinha = 9;
     protected $hBoxLinha = 6;
     protected $hLinha = 3;
+    protected $sep = '__________________________________________________';
+    protected $hSep = 1;
   
     /**
      * __contruct
@@ -91,7 +94,7 @@ class Danfce extends Common
         $this->xml = $docXML;
         $this->logomarca = $sPathLogo;
         
-        $this->fontePadrao = empty($fonteDANFE) ? 'Times' : $fonteDANFE;
+        $this->fontePadrao = 'Arial';
         $this->aFontTit = array('font' => $this->fontePadrao, 'size' => 9, 'style' => 'B');
         $this->aFontTex = array('font' => $this->fontePadrao, 'size' => 8, 'style' => '');
         
@@ -254,9 +257,9 @@ class Danfce extends Common
         $this->pdf->addPage($this->orientacao, $this->papel); // adiciona a primeira página
         $this->pdf->setLineWidth(0.1); // define a largura da linha
         $this->pdf->setTextColor(0, 0, 0);
-        $this->pdf->textBox(0, 0, $maxW, $maxH); // POR QUE PRECISO DESA LINHA?
-        $hcabecalho = 27;//para cabeçalho (dados emitente mais logomarca)  (FIXO)
-        $hcabecalhoSecundario = 10 + 3;//para cabeçalho secundário (cabeçalho sefaz) (FIXO)
+        //$this->pdf->textBox(0, 0, $maxW, $maxH); // POR QUE PRECISO DESA LINHA?
+        $hcabecalho = 23;//para cabeçalho (dados emitente mais logomarca)  (FIXO)
+        $hcabecalhoSecundario = 10;//para cabeçalho secundário (cabeçalho sefaz) (FIXO)
         $hprodutos = $hLinha + ($qtdItens * $hMaxLinha) ;//box poduto
         $hTotal = 12; //box total (FIXO)
         $hpagamentos = $hLinha + ($qtdPgto * $hLinha) + 3;//para pagamentos
@@ -279,27 +282,45 @@ class Danfce extends Common
         $y = $yInic;
         $y = $this->cabecalhoDANFE($x, $y, $hcabecalho, $pag, $totPag);
         //COLOCA CABEÇALHO SECUNDÁRIO
+
+        $y = $hcabecalho;
+        $this->addSeparator($y);
+
         $y = $hcabecalho;
         $y = $this->cabecalhoSecundarioDANFE($x, $y, $hcabecalhoSecundario);
-        $jj = $hcabecalho + $hcabecalhoSecundario;
-        //COLOCA PRODUTOS
+
         $y = $xInic + $hcabecalho + $hcabecalhoSecundario;
+        
+        $this->addSeparator($y);
+
+        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $this->hSep;
+        //COLOCA PRODUTOS
         $y = $this->produtosDANFE($x, $y, $hprodutos);
+
+        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $this->hSep;
+
+        $this->addSeparator($y);
+
+        $y += 2;
+
         //COLOCA TOTAL
-        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos;
         $y = $this->totalDANFE($x, $y, $hTotal);
+
         //COLOCA PAGAMENTOS
-        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $hTotal;
+        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $hTotal + $this->hSep;
         $y = $this->pagamentosDANFE($x, $y, $hpagamentos);
+
         //COLOCA MENSAGEM FISCAL
-        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $hTotal+ $hpagamentos;
+        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $hTotal+ $hpagamentos + $this->hSep +2;
         $y = $this->fiscalDANFE($x, $y, $hmsgfiscal);
+
         //COLOCA CONSUMIDOR
-        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $hTotal + $hpagamentos + $hmsgfiscal;
+        $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos + $hTotal + $hpagamentos + $hmsgfiscal + $this->hSep;
         $y = $this->consumidorDANFE($x, $y, $hcliente);
+
         //COLOCA QRCODE
         $y = $xInic + $hcabecalho + $hcabecalhoSecundario + $hprodutos
-            + $hTotal + $hpagamentos + $hmsgfiscal + $hcliente;
+            + $hTotal + $hpagamentos + $hmsgfiscal + $hcliente + $this->hSep;
         $y = $this->qrCodeDANFE($x, $y, $hQRCode);
         
         //adiciona as informações opcionais
@@ -327,7 +348,7 @@ class Danfce extends Common
             if ($foneLen == 11) {
                 $digito9 = substr($emitFone, 2, 1);
             }
-            $emitFone = ' - ('.$ddd.') '.$digito9. ' ' . substr($fone1, 0, 4) . '-' . substr($fone1, -4);
+            $emitFone = "\n".'('.$ddd.') '.$digito9. ' ' . substr($fone1, 0, 4) . '-' . substr($fone1, -4);
         } else {
             $emitFone = '';
         }
@@ -347,7 +368,7 @@ class Danfce extends Common
             $xImg = $margemInterna;
             $yImg = $margemInterna + 1;
             $type = (substr($this->logomarca, 0, 7) === 'data://') ? 'jpg' : null;
-            $this->pdf->image($this->logomarca, $xImg, $yImg, 30, 22.5, $type);
+            $this->pdf->image($this->logomarca, $xImg , $yImg, 25, 17.5, $type);
             $xRs = ($maxW*0.4) + $margemInterna;
             $wRs = ($maxW*0.6);
             $alignEmit = 'L';
@@ -363,10 +384,13 @@ class Danfce extends Common
         if (!empty($emitIM)) {
             $texto = $texto . " - IM:" . $emitIM;
         }
-        $texto = $texto . "\n" . $emitLgr . "," . $emitNro . " " . $emitCpl . "," . $emitBairro
+        if(!empty($emitCpl)){
+            $emitCpl = " " . $emitCpl;
+        }
+        $texto = $texto . "\n" . $emitLgr . "," . $emitNro . $emitCpl . ", " . $emitBairro
                 . ". CEP:" . $emitCEP . ". " . $emitMun . "-" . $emitUF . $emitFone;
         $aFont = array('font'=>$this->fontePadrao, 'size'=>8, 'style'=>'');
-        $this->pdf->textBox($xRs, $y, $wRs, $h, $texto, $aFont, 'C', $alignEmit, 0, '', false);
+        $this->pdf->textBox($xRs -3, $y -3, $wRs + 4, $h, $texto, $aFont, 'C', $alignEmit, 0, '', false);
     }
     
     protected function cabecalhoSecundarioDANFE($x = 0, $y = 0, $h = 0)
@@ -375,9 +399,9 @@ class Danfce extends Common
         $maxW = $this->wPrint;
         $w = ($maxW*1);
         $hBox1 = 7;
-        $texto = "DANFE NFC-e\nDocumento Auxiliar da Nota Fiscal de Consumidor Eletrônica";
+        $texto = "DANFE NFC-e Documento Auxiliar da Nota Fiscal de Consumidor Eletrônica";
         $aFont = array('font'=>$this->fontePadrao, 'size'=>8, 'style'=>'B');
-        $this->pdf->textBox($x, $y, $w, $hBox1, $texto, $aFont, 'C', 'C', 0, '', false);
+        $this->pdf->textBox($x, $y, $w, $hBox1 +2, $texto, $aFont, 'C', 'C', 0, '', false);
         $hBox2 = 4;
         $yBox2 = $y + $hBox1;
         $texto = "\nNFC-e não permite aproveitamento de crédito de ICMS";
@@ -565,6 +589,7 @@ class Danfce extends Common
         $vNF = $this->getTagValue($this->ICMSTot, "vNF");
         $vDesc  = $this->getTagValue($this->ICMSTot, "vDesc");
         $vFrete = $this->getTagValue($this->ICMSTot, "vFrete");
+        $vOutros = $this->getTagValue($this->ICMSTot, "vOutro");
         $vTotTrib = $this->getTagValue($this->ICMSTot, "vTotTrib");
         $texto = "Qtd. Total de Itens";
         $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
@@ -586,13 +611,24 @@ class Danfce extends Common
         $texto = "R$ " . $vDesc;
         $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
         $this->pdf->textBox($xValor, $yDesconto, $wColDir, $hLinha, $texto, $aFont, 'T', 'R', 0, '', false);
-        $yFrete= $y + ($hLinha*3);
+        $yOutros= $y + ($hLinha*3);
+
+        $texto = "Outros ( telentrega )";
+        $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
+        $this->pdf->textBox($x, $yOutros, $wColEsq, $hLinha, $texto, $aFont, 'T', 'L', 0, '', false);
+        $texto = "R$ " . $vOutros;
+        $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
+        $this->pdf->textBox($xValor, $yOutros, $wColDir, $hLinha, $texto, $aFont, 'T', 'R', 0, '', false);
+
+        /*
         $texto = "Frete";
         $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
         $this->pdf->textBox($x, $yFrete, $wColEsq, $hLinha, $texto, $aFont, 'T', 'L', 0, '', false);
         $texto = "R$ " . $vFrete;
         $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
         $this->pdf->textBox($xValor, $yFrete, $wColDir, $hLinha, $texto, $aFont, 'T', 'R', 0, '', false);
+        */
+
         $yTotalFinal = $y + ($hLinha*4);
         $texto = "Total";
         $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
@@ -600,13 +636,7 @@ class Danfce extends Common
         $texto = "R$ " . $vNF;
         $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
         $this->pdf->textBox($xValor, $yTotalFinal, $wColDir, $hLinha, $texto, $aFont, 'T', 'R', 0, '', false);
-        $yTotalFinal = $y + ($hLinha*5);
-        $texto = "Informação dos Tributos Totais Incidentes";
-        $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>''];
-        $this->pdf->textBox($x, $yTotalFinal, $wColEsq, $hLinha, $texto, $aFont, 'T', 'L', 0, '', false);
-        $texto = "R$ " . $vTotTrib;
-        $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
-        $this->pdf->textBox($xValor, $yTotalFinal, $wColDir, $hLinha, $texto, $aFont, 'T', 'R', 0, '', false);
+
     }
     
     protected function pagamentosDANFE($x = 0, $y = 0, $h = 0)
@@ -691,6 +721,25 @@ class Danfce extends Common
                     false
                 );
             }
+            
+            
+            $yTotalFinal = $y + 10;
+            $this->addSeparator($yTotalFinal);
+
+            $yTotalFinal += 0.5;
+
+            $texto = "Informação dos Tributos Totais Incidentes";
+            $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>''];
+            $this->pdf->textBox($x, $yTotalFinal, $wColEsq, $hLinha, $texto, $aFont, 'T', 'L', 0, '', false);
+    
+            $vTotTrib = empty($vTotTrib) ? '0.00' : $vTotTrib;
+    
+            $texto = "R$ " . $vTotTrib;
+            $aFont = ['font'=>$this->fontePadrao, 'size'=>7, 'style'=>'B'];
+            $this->pdf->textBox($xValor, $yTotalFinal, $wColDir, $hLinha, $texto, $aFont, 'T', 'R', 0, '', false);
+
+            $this->addSeparator($yTotalFinal + 4);
+
         }
     }
     
@@ -733,7 +782,7 @@ class Danfce extends Common
         $this->pdf->textBox($x, $y, $w, $hLinha, $texto, $aFontTit, 'C', 'C', 0, '', false);
         $yTex1 = $y + ($hLinha*1);
         $hTex1 = $hLinha*2;
-        $texto = "Número " . $nNF . " Série " . $serieNF . " " .$dhEmiLocalFormat . " - Via Consumidor";
+        $texto = "Nº " . $nNF . " Série " . $serieNF . " " .$dhEmiLocalFormat . " - Via Consumidor";
         $this->pdf->textBox($x, $yTex1, $w, $hTex1, $texto, $aFontTex, 'C', 'C', 0, '', false);
         $yTex2 = $y + ($hLinha*3);
         $hTex2 = $hLinha*2;
@@ -1071,5 +1120,11 @@ class Danfce extends Common
         return $cStat == '110' ||
                $cStat == '301' ||
                $cStat == '302';
+    }
+
+    protected function addSeparator($y){
+        $aFontTex = ['font'=>$this->fontePadrao, 'size'=>8, 'style'=>''];
+        $this->pdf->textBox(0, $y, 80, 0, $this->sep, $aFontTex, 'B', 'C', 0, '', false);
+        $this->hSep += 1;
     }
 }
