@@ -745,7 +745,7 @@ class Danfce extends Common
     
     protected function fiscalDANFE($x = 0, $y = 0, $h = 0)
     {
-        $y += 6;
+        $y += 8;
         $margemInterna = $this->margemInterna;
         $maxW = $this->wPrint;
         $w = ($maxW*1);
@@ -779,6 +779,7 @@ class Danfce extends Common
         $dhEmilocal = new \DateTime($dhEmi);
         $dhEmiLocalFormat = $dhEmilocal->format('d/m/Y H:i:s');
         $texto = "ÁREA DE MENSAGEM FISCAL";
+        //$hLinha += 2;
         $this->pdf->textBox($x, $y, $w, $hLinha, $texto, $aFontTit, 'C', 'C', 0, '', false);
         $yTex1 = $y + ($hLinha*1);
         $hTex1 = $hLinha*2;
@@ -799,7 +800,7 @@ class Danfce extends Common
     
     protected function consumidorDANFE($x = 0, $y = 0, $h = 0)
     {
-        $y += 6;
+        $y += 9;
         $margemInterna = $this->margemInterna;
         $maxW = $this->wPrint;
         $w = ($maxW*1);
@@ -870,7 +871,7 @@ class Danfce extends Common
     
     protected function qrCodeDANFE($x = 0, $y = 0, $h = 0)
     {
-        $y += 6;
+        $y += 8;
         $margemInterna = $this->margemInterna;
         $maxW = $this->wPrint;
         $w = ($maxW*1)+4;
